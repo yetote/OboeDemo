@@ -5,6 +5,7 @@
 
 #include "OboePlayer.h"
 
+
 void OboePlayer::readData(AudioStream *pStream) {
     size_t wFrameCount = 0;
     Result result;
@@ -15,6 +16,7 @@ void OboePlayer::readData(AudioStream *pStream) {
         if (result != Result::OK) {
             LOGE("写入失败,error%s", convertToText(result));
         }
+
     } while (wFrameCount >= 0);
 }
 
@@ -97,7 +99,6 @@ void printAudioStreamInfo(AudioStream *stream) {
 OboePlayer::OboePlayer(const char *path) {
     file = fopen(path, "rb+");
     createPlayBuilder();
-
 }
 
 void OboePlayer::setBuilderParams(AudioStreamBuilder *builder) {
@@ -107,7 +108,8 @@ void OboePlayer::setBuilderParams(AudioStreamBuilder *builder) {
     builder->setPerformanceMode(PerformanceMode::LowLatency);
     builder->setSharingMode(SharingMode::Exclusive);
     builder->setSampleRate(44100);
-//    builder->setAudioApi(AudioApi::OpenSLES);
+    builder->setAudioApi(AudioApi::AAudio);
+    builder->setCallback(this);
 }
 
 void OboePlayer::createPlayBuilder() {
@@ -128,8 +130,23 @@ void OboePlayer::createPlayBuilder() {
         LOGE("请求打开流失败%s", convertToText(result));
         return;
     }
-    std::thread readDataThread(&OboePlayer::readData, this, playStream);
-//    readData(playStream);
-    readDataThread.detach();
+//    std::thread readDataThread(&OboePlayer::readData, this, playStream);
+////    readData(playStream);
+//    readDataThread.detach();
+}
+
+
+oboe::DataCallbackResult
+OboePlayer::onAudioReady(oboe::AudioStream *audioStream, void *audioData, int32_t numFrames) {
+    size_t wFrameCount = 0;
+    Result result;
+    auto *buffer = static_cast<char *>(audioData);
+    fread(buffer, numFrames * 2 * 2, 1, file);
+    buffer = nullptr;
+    return DataCallbackResult::Continue;
+}
+
+OboePlayer::~OboePlayer() {
+
 }
 

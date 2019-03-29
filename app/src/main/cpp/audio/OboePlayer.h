@@ -12,13 +12,16 @@
 #define LOG_TAG "OboePlayer"
 using namespace oboe;
 
-class OboePlayer {
+class OboePlayer : AudioStreamCallback {
 public:
     OboePlayer(const char *path);
 
     ~OboePlayer();
 
     void readData(AudioStream *pStream);
+
+    oboe::DataCallbackResult
+    onAudioReady(oboe::AudioStream *audioStream, void *audioData, int32_t numFrames);
 
 private:
     AudioStreamBuilder *builder;
@@ -29,7 +32,6 @@ private:
     void setBuilderParams(AudioStreamBuilder *builder);
 
     void createPlayBuilder();
-
 };
 
 
